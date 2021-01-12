@@ -1,7 +1,7 @@
 // PROVIDED CODE BELOW (LINES 1 - 80) DO NOT REMOVE
 
 // The store will hold all information needed globally
-var store = {
+let store = {
 	track_id: undefined,
 	player_id: undefined,
 	race_id: undefined,
@@ -34,32 +34,39 @@ async function onPageLoad() {
 
 function setupClickHandlers() {
 	document.addEventListener('click', function(event) {
-		const { target } = event
+		let { target } = event;
 
-		// Race track form field
-		if (target.matches('.card.track')) {
-			handleSelectTrack(target)
-		}
+    if (target.matches('.card.track') || target.parentNode.matches('.card.track')) {
+          if (target.parentNode.matches('.card.track')) { 
+            target = target.parentNode;
+          }
+      handleSelectTrack(target)
+    }
 
-		// Podracer form field
-		if (target.matches('.card.podracer')) {
-			handleSelectPodRacer(target)
-		}
+    // Podracer form field
+    if (target.matches('.card.podracer') || target.parentNode.matches('.card.podracer')) {
+          if (target.parentNode.matches('.card.podracer')) { 
+               target = target.parentNode;
+          }
+      handleSelectPodRacer(target)
+    }
 
 		// Submit create race form
-		if (target.matches('#submit-create-race')) {
+		if (target.matches('#submit-create-race') ) {
 			event.preventDefault()
-	
+			
 			// start race
-			handleCreateRace().catch(e=>console.log("Problem with handleCreateRace::",e))
+			handleCreateRace()
 		}
 
 		// Handle acceleration click
 		if (target.matches('#gas-peddle')) {
+				
 			handleAccelerate(target)
-		}
+		
+	}
 
-	}, false)
+	},false)
 }
 
 async function delay(ms) {
@@ -78,20 +85,27 @@ async function handleCreateRace() {
 	
 
 	// TODO - Get player_id and track_id from the store
-	const {player_id,track_id} = store
-	
-	// const race = TODO - invoke the API call to create the race, then save the result
-	const result = await createRace(player_id,track_id)
-	console.log(result)
-	renderAt('#race', renderRaceStartView(result.Track,result.Cars))
-	// TODO - update the store with the race id
-	store=Object.assign(store,{race_id : result.ID-1})
-	console.log(store.race_id)
-	// The race has been created, now start the countdown
-	// TODO - call the async function runCountdown
-	await runCountdown()
-	await startRace(store.race_id)
-	await runRace(store.race_id)
+	try{
+		const {player_id,track_id} = store
+		if(!track_id || !player_id) {
+			alert(`Please select track and racer to start the race!`);
+			return;
+		}
+		// const race = TODO - invoke the API call to create the race, then save the result
+		const result = await createRace(player_id,track_id)
+		console.log(result)
+		renderAt('#race', renderRaceStartView(result.Track,result.Cars))
+		// TODO - update the store with the race id
+		store=Object.assign(store,{race_id : result.ID-1})
+		console.log(store.race_id)
+		// The race has been created, now start the countdown
+		// TODO - call the async function runCountdown
+		await runCountdown()
+		await startRace(store.race_id)
+		await runRace(store.race_id)
+	}catch(e){
+		console.log("Problem with handleCreateRace::",e)
+	}
 
 	// TODO - call the async function startRace
 
@@ -116,7 +130,7 @@ async function runRace(raceID) {
 					resolve(result)
 			}
 		 }catch(e){
-			 	console.log("Problem with runRace async function",e)
+			 	console.log("Problem with getRace async function",e)
 		}
 		},500)
 	/* 
@@ -133,21 +147,24 @@ async function runRace(raceID) {
 		renderAt('#race', resultsView(res.positions)) // to render the results view
 		reslove(res) // resolve the promise
 	*/
-	})
+	}).catch(e=>console.log("Problem with returin runRace new Promise::",e))
 	// remember to add error handling for the Promise
 }
 
 async function runCountdown() {
 	try {
+		const buttonElement = document.querySelector("BUTTON")
 		// wait for the DOM to load
 		await delay(1000)
 		let timer = 3
-
+		
+		buttonElement.disabled = true
 		return new Promise(resolve => {
 			// TODO - use Javascript's built in setInterval method to count down once per second
 			const interval =  setInterval(function(){
 				document.getElementById('big-numbers').innerHTML = --timer
 				if (timer==0){
+					buttonElement.disabled = false
 					clearInterval(interval)
 					resolve()
 				}
@@ -197,10 +214,13 @@ function handleSelectTrack(target) {
 	
 }
 
-function handleAccelerate() {
+function handleAccelerate(target) {
 	console.log("accelerate button clicked")
+	console.log(target)
 	// TODO - Invoke the API call to accelerate
-	accelerate(store.race_id)
+	
+	 accelerate(store.race_id)
+	
 }
 
 // HTML VIEWS ------------------------------------------------
